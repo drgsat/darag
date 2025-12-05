@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محرر الصور الاحترافي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2D00F7;
+            --primary-light: #6C5CE7;
+            --secondary: #FF6B6B;
+            --accent: #00F5D4;
+            --dark: #0F0F23;
+            --dark-secondary: #1A1A35;
+            --light: #F8F9FA;
+            --text-dark: #0F0F23;
+            --text-light: #E8E8F0;
+            --shadow: rgba(45, 0, 247, 0.3);
+            --glow: rgba(0, 245, 212, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans Arabic', 'Almarai', sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-secondary) 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* خلفية متحركة */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(45, 0, 247, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 245, 212, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 107, 107, 0.05) 0%, transparent 50%);
+            animation: gradientShift 20s ease infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(5%, 5%) rotate(180deg); }
+        }
+
+        /* شاشة الترحيب */
+        #welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--accent) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        #welcome-screen::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: 
+                repeating-linear-gradient(45deg, transparent, transparent 60px, rgba(255,255,255,0.03) 60px, rgba(255,255,255,0.03) 120px);
+            animation: patternMove 30s linear infinite;
+        }
+
+        @keyframes patternMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(120px, 120px); }
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            animation: welcomeFadeIn 1.2s ease-out;
+        }
+
+        @keyframes welcomeFadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .welcome-content h1 {
+            font-family: 'Almarai', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.03em;
+            text-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .welcome-content p {
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+
+        #enter {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 1.2rem 3rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #enter::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        #enter:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        #enter:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+        }
+
+        /* المحتوى الرئيسي */
+        #main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+        }
+
+        /* الشريط الجانبي */
+        .sidebar {
+            background: rgba(26, 26, 53, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar h2 {
+            font-family: 'Almarai', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--accent);
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+
+        .controls {
+            list-style: none;
+        }
+
+        .controls li {
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .controls li:nth-child(1) { animation-delay: 0.1s; }
+        .controls li:nth-child(2) { animation-delay: 0.15s; }
+        .controls li:nth-child(3) { animation-delay: 0.2s; }
+        .controls li:nth-child(4) { animation-delay: 0.25s; }
+        .controls li:nth-child(5) { animation-delay: 0.3s; }
+        .controls li:nth-child(6) { animation-delay: 0.35s; }
+        .controls li:nth-child(7) { animation-delay: 0.4s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .controls label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: var(--text-light);
+        }
+
+        .controls span {
+            background: var(--primary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            outline: none;
+            -webkit-appearance: none;
+            position: relative;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px var(--glow);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 15px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px var(--glow);
+        }
+
+        /* منطقة الصورة */
+        .editor-area {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary) 0%, #FF8E8E 100%);
+            color: white;
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent) 0%, #00D9B8 100%);
+            color: var(--dark);
+        }
+
+        .btn-dark {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        #upload {
+            display: none;
+        }
+
+        .img-box {
+            background: rgba(26, 26, 53, 0.5);
+            backdrop-filter: blur(20px);
+            border: 2px dashed rgba(0, 245, 212, 0.3);
+            border-radius: 24px;
+            padding: 3rem;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transition: all 0.4s ease;
+        }
+
+        .img-box:hover {
+            border-color: var(--accent);
+            box-shadow: 0 20px 60px var(--glow);
+        }
+
+        .img-box.pulse {
+            animation: pulse 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        #canvas {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 16px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            display: block;
+        }
+
+        #img {
+            display: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 1.5rem;
+            opacity: 0.3;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .empty-state p {
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        /* History Controls */
+        .history-controls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .history-controls button {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .history-controls button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .history-controls button:not(:disabled):hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Dark Mode Toggle */
+        #dark-mode-toggle {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 100;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #dark-mode-toggle:hover {
+            transform: rotate(180deg) scale(1.1);
+            box-shadow: 0 15px 40px var(--glow);
+        }
+
+        /* Loading Spinner */
+        #loading-spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 245, 212, 0.2);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            #main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                top: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #main-content {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .sidebar {
+                padding: 1.5rem;
+            }
+
+            .header-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: 100%;
+            }
+
+            .welcome-content h1 {
+                font-size: 2.5rem;
+            }
+        }
+
+        /* Dark Mode Class */
+        body.dark-mode {
+            --dark: #000000;
+            --dark-secondary: #0A0A0F;
+        }
+    </style>
+</head>
+<body>
+    <!-- شاشة الترحيب -->
+    <div id="welcome-screen">
+        <div class="welcome-content">
+            <h1>✨ محرر الصور الاحترافي</h1>
+            <p>حوّل صورك إلى أعمال فنية مذهلة</p>
+            <button id="enter">ابدأ الآن</button>
+        </div>
+    </div>
+
+    <!-- زر الوضع الليلي -->
+    <button id="dark-mode-toggle">🌙</button>
+
+    <!-- المحتوى الرئيسي -->
+    <div id="main-content" style="display: none;">
+        <!-- الشريط الجانبي -->
+        <aside class="sidebar">
+            <h2>🎨 التحكم بالفلاتر</h2>
+            <ul class="controls">
+                <li>
+                    <label>
+                        التشبع
+                        <span id="saturate-value">100%</span>
+                    </label>
+                    <input type="range" id="saturate" min="0" max="200" value="100">
+                </li>
+                <li>
+                    <label>
+                        التباين
+                        <span id="contrast-value">100%</span>
+                    </label>
+                    <input type="range" id="contrast" min="0" max="200" value="100">
+                </li>
+                <li>
+                    <label>
+                        السطوع
+                        <span id="brightness-value">100%</span>
+                    </label>
+                    <input type="range" id="brightness" min="0" max="200" value="100">
+                </li>
+                <li>
+                    <label>
+                        السيبيا
+                        <span id="sepia-value">0%</span>
+                    </label>
+                    <input type="range" id="sepia" min="0" max="100" value="0">
+                </li>
+                <li>
+                    <label>
+                        أبيض وأسود
+                        <span id="grayscale-value">0</span>
+                    </label>
+                    <input type="range" id="grayscale" min="0" max="1" step="0.01" value="0">
+                </li>
+                <li>
+                    <label>
+                        الضبابية
+                        <span id="blur-value">0px</span>
+                    </label>
+                    <input type="range" id="blur" min="0" max="20" value="0">
+                </li>
+                <li>
+                    <label>
+                        تدوير الألوان
+                        <span id="hue-rotate-value">0°</span>
+                    </label>
+                    <input type="range" id="hue-rotate" min="0" max="360" value="0">
+                </li>
+            </ul>
+
+            <div class="history-controls">
+                <button id="undo-btn" disabled>↶ تراجع</button>
+                <button id="redo-btn" disabled>↷ إعادة</button>
+            </div>
+        </aside>
+
+        <!-- منطقة العمل -->
+        <main class="editor-area">
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="document.getElementById('upload').click()">
+                    📤 رفع صورة
+                </button>
+                <input type="file" id="upload" accept="image/*">
+                
+                <a id="download" download="edited-image.png">
+                    <button class="btn btn-accent">💾 تحميل</button>
+                </a>
+                
+                <button class="btn btn-secondary" id="reset-btn">🔄 إعادة تعيين</button>
+            </div>
+
+            <div class="img-box">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <p>ارفع صورة لتبدأ التعديل</p>
+                </div>
+                <canvas id="canvas"></canvas>
+                <img id="img" alt="صورة للتعديل">
+                <div id="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="image-editor-final.js"></script>
+    
+    <script>
+        // تحديث قيم الفلاتر في الوقت الفعلي
+        document.getElementById('saturate').addEventListener('input', function() {
+            document.getElementById('saturate-value').textContent = this.value + '%';
+        });
+        
+        document.getElementById('contrast').addEventListener('input', function() {
+            document.getElementById('contrast-value').textContent = this.value + '%';
+        });
+        
+        document.getElementById('brightness').addEventListener('input', function() {
+            document.getElementById('brightness-value').textContent = this.value + '%';
+        });
+        
+        document.getElementById('sepia').addEventListener('input', function() {
+            document.getElementById('sepia-value').textContent = this.value + '%';
+        });
+        
+        document.getElementById('grayscale').addEventListener('input', function() {
+            document.getElementById('grayscale-value').textContent = this.value;
+        });
+        
+        document.getElementById('blur').addEventListener('input', function() {
+            document.getElementById('blur-value').textContent = this.value + 'px';
+        });
+        
+        document.getElementById('hue-rotate').addEventListener('input', function() {
+            document.getElementById('hue-rotate-value').textContent = this.value + '°';
+        });
+    </script>
+</body>
+</html>
